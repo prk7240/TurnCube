@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회전 미로 - Cube Escape</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="startScreen" class="screen">
+    <div class="panel">
+      <h1>회전 미로</h1>
+      <p>공간을 회전시켜 중력의 방향을 바꾸고, 노란 열쇠를 찾아 탈출하세요.</p>
+      <div class="controls">
+        <span>↑ ↓ ← → 이동</span>
+        <span>X 중력 반대 방향 점프</span>
+        <span>SPACE 화면 90° 회전</span>
+      </div>
+      <button id="startButton">게임 시작</button>
+    </div>
+  </div>
+
+  <div id="gameUI" class="hidden">
+    <div class="hud">
+      <div>KEY: <span id="keyStatus">미획득</span></div>
+      <div>회전: <span id="rotationText">0°</span></div>
+    </div>
+    <div id="message"></div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="clearScreen" class="screen hidden">
+    <div class="panel">
+      <h1>ESCAPED!</h1>
+      <p>노란 열쇠를 찾았습니다.</p>
+      <button id="restartButton">다시 플레이</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
