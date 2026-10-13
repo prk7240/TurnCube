@@ -209,7 +209,6 @@ const player = {
   },
 
   jump() {
-    // 점프는 현재 중력의 반대 방향으로 작용한다.
     const g = getGravityVector();
 
     if (isGrounded()) {
@@ -219,11 +218,32 @@ const player = {
   }
 };
 
+// 미로 내부에 안전하게 배치될 수 있는 후보 열쇠 위치들
+const possibleKeyPositions = [
+  {x: 3260, y: 2450}, // 우하단 원래 위치
+  {x: 3050, y: 350},  // 우상단 구역
+  {x: 350, y: 350},   // 좌상단 구역
+  {x: 1400, y: 450},  // 상단 중앙 구역
+  {x: 450, y: 1200},  // 좌측 중앙 구역
+  {x: 1400, y: 1450}, // 중앙 구역
+  {x: 3000, y: 1750}, // 우측 중앙 구역
+  {x: 850, y: 2100}   // 하단 좌측 구역
+];
+
 const keyItem = {
   x: 3260,
   y: 2450,
   size: 32,
-  collected: false
+  collected: false,
+
+  randomize() {
+    // 매번 다른 위치가 선택되도록 랜덤 인덱스 추첨
+    const randomIndex = Math.floor(Math.random() * possibleKeyPositions.length);
+    const pos = possibleKeyPositions[randomIndex];
+    this.x = pos.x;
+    this.y = pos.y;
+    this.collected = false;
+  }
 };
 
 let rotation = 0;
@@ -232,7 +252,7 @@ let lastTime = 0;
 
 function startGame() {
   player.reset();
-  keyItem.collected = false;
+  keyItem.randomize(); // 게임 시작 시 열쇠 위치 무작위 재배치
   rotation = 0;
 
   gameRunning = true;
