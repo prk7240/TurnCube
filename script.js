@@ -51,6 +51,42 @@ addEventListener("keyup", e => {
   keys[e.code] = false;
 });
 
+// 모바일 터치/클릭 버튼 바인딩 함수
+function bindTouchButton(id, keyCode, actionFn) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+
+  const pressOn = (e) => {
+    e.preventDefault();
+    keys[keyCode] = true;
+    btn.classList.add("pressed");
+    if (actionFn && gameRunning) {
+      actionFn();
+    }
+  };
+
+  const pressOff = (e) => {
+    e.preventDefault();
+    keys[keyCode] = false;
+    btn.classList.remove("pressed");
+  };
+
+  btn.addEventListener("pointerdown", pressOn);
+  btn.addEventListener("pointerup", pressOff);
+  btn.addEventListener("pointerleave", pressOff);
+  btn.addEventListener("pointercancel", pressOff);
+}
+
+// 터치 컨트롤 바인딩 적용
+window.addEventListener("DOMContentLoaded", () => {
+  bindTouchButton("btnUp", "ArrowUp");
+  bindTouchButton("btnDown", "ArrowDown");
+  bindTouchButton("btnLeft", "ArrowLeft");
+  bindTouchButton("btnRight", "ArrowRight");
+  bindTouchButton("btnJump", "KeyX", () => player.jump());
+  bindTouchButton("btnRotate", "Space", () => rotateWorld());
+});
+
 /*
   핵심 규칙
 
@@ -217,8 +253,6 @@ restartButton.addEventListener("click", startGame);
 function rotateWorld() {
   rotation = (rotation + 90) % 360;
 
-  // 회전 직후 기존 속도를 조금 줄여서
-  // 방향 전환의 의도가 분명하게 느껴지도록 한다.
   player.vx *= 0.35;
   player.vy *= 0.35;
 
@@ -242,11 +276,6 @@ function rotateWorld() {
 
 function getGravityVector() {
   const r = rotation * Math.PI / 180;
-
-  /*
-    화면의 아래쪽 (0, 1)을
-    회전된 월드 좌표로 변환한다.
-  */
   return {
     x: -Math.sin(r),
     y: Math.cos(r)
@@ -254,9 +283,7 @@ function getGravityVector() {
 }
 
 function getScreenAxes() {
-  // 화면 오른쪽이 현재 월드에서 어느 방향인지 계산
   const r = rotation * Math.PI / 180;
-
   return {
     right: {
       x: Math.cos(r),
@@ -319,10 +346,6 @@ function isGrounded() {
 }
 
 function moveWithCollision(dx, dy) {
-  /*
-    큰 속도로 벽을 통과하지 않도록
-    X/Y를 나누어 충돌 처리한다.
-  */
   const nx = player.x + dx;
 
   if (!collides(nx, player.y)) {
@@ -345,10 +368,6 @@ function updatePhysics(dt) {
   const input = getMovementInput();
   const axes = getScreenAxes();
 
-  /*
-    방향키는 화면 기준으로 움직인다.
-    즉, 미로를 회전해도 플레이어 조작감은 유지된다.
-  */
   const inputX =
     axes.right.x * input.x +
     axes.down.x * input.y;
@@ -357,18 +376,11 @@ function updatePhysics(dt) {
     axes.right.y * input.x +
     axes.down.y * input.y;
 
-  /*
-    플레이어가 직접 움직일 수 있는 속도와
-    중력에 의한 속도를 합친다.
-  */
   const controlStrength = player.moveSpeed * dt;
 
   let dx = inputX * controlStrength;
   let dy = inputY * controlStrength;
 
-  /*
-    중력
-  */
   player.vx += gravity.x * player.gravity * dt;
   player.vy += gravity.y * player.gravity * dt;
 
@@ -386,9 +398,6 @@ function updatePhysics(dt) {
 
   moveWithCollision(dx, dy);
 
-  /*
-    바닥/벽에 착지했다면 해당 방향의 속도를 제거한다.
-  */
   if (isGrounded()) {
     const dot =
       player.vx * gravity.x +
@@ -434,7 +443,6 @@ function drawWorld() {
   ctx.fillStyle = "#d4d4d0";
   ctx.fillRect(0, 0, WORLD_W, WORLD_H);
 
-  // 바닥 격자
   ctx.strokeStyle = "rgba(0,0,0,.045)";
   ctx.lineWidth = 1;
 
@@ -452,7 +460,6 @@ function drawWorld() {
     ctx.stroke();
   }
 
-  // 벽
   for (const wall of walls) {
     ctx.fillStyle = "#303238";
     ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
@@ -514,20 +521,6 @@ function drawKey(x, y) {
 }
 
 function getCamera() {
-  /*
-    화면에 플레이어를 약간 아래쪽에 보이게 하기 위한 오프셋.
-
-    중요:
-    미로가 회전하면 카메라 오프셋도 같은 각도로 회전해야 한다.
-    기존 코드에서는 y축으로만 180px을 이동해서,
-    90/180/270도 회전했을 때 화면상의 벽과 실제 충돌 위치가
-    어긋나는 문제가 생길 수 있었다.
-
-    아래에서는 '화면상의 플레이어 위치'를 먼저 정하고,
-    그 위치에 플레이어의 월드 좌표가 정확히 오도록
-    카메라 좌표를 역산한다.
-  */
-
   const screenOffsetX = 0;
   const screenOffsetY = 180;
 
@@ -535,9 +528,6 @@ function getCamera() {
   const cos = Math.cos(r);
   const sin = Math.sin(r);
 
-  /*
-    화면 오프셋을 월드 좌표로 역회전한다.
-  */
   const worldOffsetX =
     screenOffsetX * cos - screenOffsetY * sin;
 
@@ -554,15 +544,8 @@ function getPlayerScreenPosition() {
   const screenOffsetX = 0;
   const screenOffsetY = 180;
 
-  const r = rotation * Math.PI / 180;
-
-  const screenX =
-    W / 2 +
-    screenOffsetX;
-
-  const screenY =
-    H * 0.62 +
-    screenOffsetY;
+  const screenX = W / 2 + screenOffsetX;
+  const screenY = H * 0.62 + screenOffsetY;
 
   return {
     x: screenX,
@@ -570,25 +553,13 @@ function getPlayerScreenPosition() {
   };
 }
 
-
-
-
-
 function drawPlayer(camera) {
-  /*
-    getCamera()가 이미 플레이어가 화면에 표시될 위치를
-    정확히 계산했기 때문에, 실제 렌더링 위치도
-    같은 기준을 사용한다.
-  */
-const pos = getPlayerScreenPosition();
+  const pos = getPlayerScreenPosition();
 
-
-ctx.save();
-ctx.translate(pos.x, pos.y);
+  ctx.save();
+  ctx.translate(pos.x, pos.y);
 
   const s = player.size;
-
-  // 중력 방향 표시용 그림자
   const g = getGravityVector();
 
   ctx.fillStyle = "rgba(0,0,0,.28)";
@@ -606,7 +577,6 @@ ctx.translate(pos.x, pos.y);
 
   ctx.fill();
 
-  // 큐브
   ctx.fillStyle = "#ffd21a";
   ctx.strokeStyle = "#161616";
   ctx.lineWidth = 5;
@@ -629,11 +599,10 @@ function drawGravityIndicator() {
   const g = getGravityVector();
 
   const x = 75;
-  const y = H - 75;
+  const y = H - 150;
   const length = 36;
 
   ctx.save();
-
   ctx.translate(x, y);
 
   ctx.strokeStyle = "rgba(255,255,255,.75)";
@@ -664,31 +633,18 @@ function drawGravityIndicator() {
 function draw() {
   ctx.clearRect(0, 0, W, H);
 
-  /*
-    월드 렌더링과 카메라 계산에 같은 변환을 사용한다.
-    따라서 벽의 화면 위치와 실제 충돌 판정의 월드 좌표가
-    항상 1:1로 대응한다.
-  */
   const camera = getCamera();
 
   ctx.save();
-
-  // 카메라가 바라보는 화면의 기준점
   ctx.translate(W / 2, H * 0.62);
-
-  // 실제 게임 월드를 회전
   ctx.rotate(-rotation * Math.PI / 180);
-
-  // 카메라 좌표만큼 월드를 이동
   ctx.translate(-camera.x, -camera.y);
 
   drawWorld();
 
   ctx.restore();
 
-  // 플레이어는 위의 카메라 계산과 동일한 화면 좌표에 표시
   drawPlayer(camera);
-
   drawGravityIndicator();
 }
 

@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>회전 미로 - Cube Escape</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -26,6 +26,22 @@
       <div>회전: <span id="rotationText">0°</span></div>
     </div>
     <div id="message"></div>
+
+    <!-- 모바일 온스크린 UI 컨트롤러 -->
+    <div id="mobileControls">
+      <div class="dpad">
+        <button class="m-btn" id="btnUp">▲</button>
+        <div class="dpad-row">
+          <button class="m-btn" id="btnLeft">◀</button>
+          <button class="m-btn" id="btnRight">▶</button>
+        </div>
+        <button class="m-btn" id="btnDown">▼</button>
+      </div>
+      <div class="action-pads">
+        <button class="m-btn action-btn" id="btnJump">JUMP</button>
+        <button class="m-btn action-btn rotate-btn" id="btnRotate">ROTATE</button>
+      </div>
+    </div>
   </div>
 
   <canvas id="gameCanvas"></canvas>

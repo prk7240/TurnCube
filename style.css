@@ -1,5 +1,8 @@
 * {
   box-sizing: border-box;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 html, body {
@@ -97,6 +100,7 @@ button:hover {
   background: rgba(0,0,0,.62);
   border: 1px solid rgba(255,255,255,.2);
   font-weight: 700;
+  pointer-events: auto;
 }
 
 #message {
@@ -112,4 +116,76 @@ button:hover {
 
 #message.show {
   opacity: 1;
+}
+
+/* 모바일 온스크린 컨트롤러 스타일 */
+#mobileControls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 20px;
+  z-index: 30;
+}
+
+.dpad {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dpad-row {
+  display: flex;
+  gap: 50px;
+}
+
+.m-btn {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  outline: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.m-btn:active, .m-btn.pressed {
+  background: rgba(255, 210, 26, 0.7);
+  border-color: #ffd21a;
+  transform: scale(0.95);
+}
+
+.action-pads {
+  pointer-events: auto;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  padding-bottom: 10px;
+}
+
+.action-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+
+.rotate-btn {
+  background: rgba(255, 210, 26, 0.4);
+  border-color: #ffd21a;
+  color: #ffd21a;
 }
