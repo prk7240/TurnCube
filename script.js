@@ -12,16 +12,22 @@ const message = document.getElementById("message");
 
 let W = innerWidth;
 let H = innerHeight;
+let viewScale = 1; // 반응형 화면 비율 축척
 
 function resize() {
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = innerWidth * dpr;
-  canvas.height = innerHeight * dpr;
-  canvas.style.width = innerWidth + "px";
-  canvas.style.height = innerHeight + "px";
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   W = innerWidth;
   H = innerHeight;
+  
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // 화면 폭/높이 기준 기준 줌 비율 자동 산출 (모바일/PC 맞춤)
+  const minDim = Math.min(W, H);
+  viewScale = Math.max(0.45, Math.min(1.2, minDim / 800));
 }
 
 addEventListener("resize", resize);
@@ -86,23 +92,6 @@ window.addEventListener("DOMContentLoaded", () => {
   bindTouchButton("btnJump", "KeyX", () => player.jump());
   bindTouchButton("btnRotate", "Space", () => rotateWorld());
 });
-
-/*
-  핵심 규칙
-
-  미로는 화면에서 90도씩 회전한다.
-  중력은 항상 "화면 아래쪽"으로 작용한다.
-
-  따라서 화면을 회전하면 중력의 월드 방향도 바뀐다.
-
-  회전 0°  : 아래로 떨어짐
-  회전 90° : 왼쪽으로 떨어짐
-  회전 180°: 위로 떨어짐
-  회전 270°: 오른쪽으로 떨어짐
-
-  이것을 이용해 벽/바닥에 착지하고,
-  다시 SPACE로 공간을 회전시켜 다음 구간으로 이동한다.
-*/
 
 const WORLD_W = 3600;
 const WORLD_H = 3000;
@@ -180,22 +169,14 @@ const player = {
   x: 520,
   y: 2110,
   size: 42,
-
-  // 방향키 이동
   moveSpeed: 310,
-
-  // 중력
   gravity: 1450,
   maxFallSpeed: 900,
   vx: 0,
   vy: 0,
-
-  // 점프
   jumpPower: 900,
-
   z: 0,
   vz: 0,
-
   key: false,
 
   reset() {
@@ -218,16 +199,15 @@ const player = {
   }
 };
 
-// 미로 내부에 안전하게 배치될 수 있는 후보 열쇠 위치들
 const possibleKeyPositions = [
-  {x: 3260, y: 2450}, // 우하단 원래 위치
-  {x: 3050, y: 350},  // 우상단 구역
-  {x: 350, y: 350},   // 좌상단 구역
-  {x: 1400, y: 450},  // 상단 중앙 구역
-  {x: 450, y: 1200},  // 좌측 중앙 구역
-  {x: 1400, y: 1450}, // 중앙 구역
-  {x: 3000, y: 1750}, // 우측 중앙 구역
-  {x: 850, y: 2100}   // 하단 좌측 구역
+  {x: 3260, y: 2450},
+  {x: 3050, y: 350},
+  {x: 350, y: 350},
+  {x: 1400, y: 450},
+  {x: 450, y: 1200},
+  {x: 1400, y: 1450},
+  {x: 3000, y: 1750},
+  {x: 850, y: 2100}
 ];
 
 const keyItem = {
@@ -237,7 +217,6 @@ const keyItem = {
   collected: false,
 
   randomize() {
-    // 매번 다른 위치가 선택되도록 랜덤 인덱스 추첨
     const randomIndex = Math.floor(Math.random() * possibleKeyPositions.length);
     const pos = possibleKeyPositions[randomIndex];
     this.x = pos.x;
@@ -252,7 +231,7 @@ let lastTime = 0;
 
 function startGame() {
   player.reset();
-  keyItem.randomize(); // 게임 시작 시 열쇠 위치 무작위 재배치
+  keyItem.randomize();
   rotation = 0;
 
   gameRunning = true;
@@ -542,17 +521,14 @@ function drawKey(x, y) {
 
 function getCamera() {
   const screenOffsetX = 0;
-  const screenOffsetY = 180;
+  const screenOffsetY = 120 * viewScale;
 
   const r = rotation * Math.PI / 180;
   const cos = Math.cos(r);
   const sin = Math.sin(r);
 
-  const worldOffsetX =
-    screenOffsetX * cos - screenOffsetY * sin;
-
-  const worldOffsetY =
-    screenOffsetX * sin + screenOffsetY * cos;
+  const worldOffsetX = screenOffsetX * cos - screenOffsetY * sin;
+  const worldOffsetY = screenOffsetX * sin + screenOffsetY * cos;
 
   return {
     x: player.x - worldOffsetX,
@@ -562,10 +538,10 @@ function getCamera() {
 
 function getPlayerScreenPosition() {
   const screenOffsetX = 0;
-  const screenOffsetY = 180;
+  const screenOffsetY = 120 * viewScale;
 
   const screenX = W / 2 + screenOffsetX;
-  const screenY = H * 0.62 + screenOffsetY;
+  const screenY = H * 0.55 + screenOffsetY;
 
   return {
     x: screenX,
@@ -578,6 +554,7 @@ function drawPlayer(camera) {
 
   ctx.save();
   ctx.translate(pos.x, pos.y);
+  ctx.scale(viewScale, viewScale);
 
   const s = player.size;
   const g = getGravityVector();
@@ -618,16 +595,16 @@ function drawPlayer(camera) {
 function drawGravityIndicator() {
   const g = getGravityVector();
 
-  const x = 75;
-  const y = H - 150;
-  const length = 36;
+  const x = Math.max(50, W * 0.08);
+  const y = H - Math.max(160, H * 0.22);
+  const length = 32 * viewScale;
 
   ctx.save();
   ctx.translate(x, y);
 
   ctx.strokeStyle = "rgba(255,255,255,.75)";
   ctx.fillStyle = "rgba(255,255,255,.75)";
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 4 * viewScale;
   ctx.lineCap = "round";
 
   ctx.beginPath();
@@ -642,8 +619,8 @@ function drawGravityIndicator() {
 
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(-10, -7);
-  ctx.lineTo(-10, 7);
+  ctx.lineTo(-8 * viewScale, -6 * viewScale);
+  ctx.lineTo(-8 * viewScale, 6 * viewScale);
   ctx.closePath();
   ctx.fill();
 
@@ -656,7 +633,8 @@ function draw() {
   const camera = getCamera();
 
   ctx.save();
-  ctx.translate(W / 2, H * 0.62);
+  ctx.translate(W / 2, H * 0.55);
+  ctx.scale(viewScale, viewScale);
   ctx.rotate(-rotation * Math.PI / 180);
   ctx.translate(-camera.x, -camera.y);
 
